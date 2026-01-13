@@ -1,4 +1,4 @@
-# tbn-wm
+# yywm
 
 An i3wm-inspired window manager for MacOS that uses native graphics APIs to avoid some of the shortcomings of existing WMs.
 
