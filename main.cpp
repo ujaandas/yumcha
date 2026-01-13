@@ -16,7 +16,11 @@ CGEventRef kpCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event,
                       void *refcon) {
   if (type == kCGEventKeyDown) {
     CGKeyCode key = CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
+    CGEventFlags flags = CGEventGetFlags(event);
     printf("Keycode: %d\n", key);
+    if (flags & kCGEventFlagMaskAlternate) {
+      printf("  Option is down\n");
+    }
   }
   return event;
 }
