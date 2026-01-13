@@ -10,66 +10,9 @@ extern "C" CGSize getScreenSize();
 extern "C" void hideAppByPID(pid_t pid);
 extern "C" void unhideAppByPID(pid_t pid);
 
+const pid_t vscPid = 33410;
 std::atomic<bool> running{true};
-
-CGEventRef kpCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event,
-                      void *refcon) {
-  if (type == kCGEventKeyDown) {
-    CGKeyCode keycode =
-        CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
-    CGEventFlags flags = CGEventGetFlags(event);
-    if (flags & kCGEventFlagMaskAlternate) {
-      switch ((int)keycode) {
-      // opt+h
-      case 4:
-        std::printf("left\n");
-        break;
-      // opt+j
-      case 38:
-        std::printf("down\n");
-        break;
-      // opt+k
-      case 40:
-        std::printf("up\n");
-        break;
-      // opt+l
-      case 37:
-        std::printf("right\n");
-        break;
-      };
-    }
-  }
-  return event;
-}
-
-void eventTapThread() {
-  // Create event mask for what we want
-  CGEventMask mask = CGEventMaskBit(kCGEventKeyDown);
-
-  // Make tap
-  CFMachPortRef tap =
-      CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap,
-                       kCGEventTapOptionDefault, mask, kpCallback, nullptr);
-
-  // Get source and loop
-  CFRunLoopSourceRef source =
-      CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0);
-  CFRunLoopRef loop = CFRunLoopGetCurrent();
-
-  // Activate event loop
-  CGEventTapEnable(tap, true);
-  CFRunLoopAddSource(loop, source, kCFRunLoopDefaultMode);
-
-  // Run event loop
-  while (running) {
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, true);
-  }
-
-  // Cleanup
-  CFRunLoopRemoveSource(loop, source, kCFRunLoopDefaultMode);
-  CFRelease(source);
-  CFRelease(tap);
-}
+CGSize size = getScreenSize();
 
 void setApplicationSize(pid_t pid, int x, int y) {
   // Get accessibility object
@@ -129,11 +72,91 @@ void setApplicationPos(pid_t pid, int x, int y) {
   CFRelease(app);
 }
 
+CGEventRef kpCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event,
+                      void *refcon) {
+  if (type == kCGEventKeyDown) {
+    CGKeyCode keycode =
+        CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
+    CGEventFlags flags = CGEventGetFlags(event);
+
+    std::printf("keycode: %d\n", keycode);
+
+    if (flags & kCGEventFlagMaskAlternate) {
+      switch ((int)keycode) {
+      // opt+h
+      case 4:
+        std::printf("left\n");
+        setApplicationPos(vscPid, 0, 0);
+        setApplicationSize(vscPid, size.width / 2, size.height);
+        break;
+      // opt+j
+      case 38:
+        std::printf("down\n");
+        setApplicationPos(vscPid, 0, size.height / 2);
+        setApplicationSize(vscPid, size.width, size.height / 2);
+        break;
+      // opt+k
+      case 40:
+        std::printf("up\n");
+        setApplicationPos(vscPid, 0, 0);
+        setApplicationSize(vscPid, size.width, size.height / 2);
+        break;
+      // opt+l
+      case 37:
+        std::printf("right\n");
+        setApplicationPos(vscPid, size.width / 2, 0);
+        setApplicationSize(vscPid, size.width / 2, size.height);
+        break;
+      // opt+space
+      case 36:
+        std::printf("full\n");
+        setApplicationPos(vscPid, 0, 0);
+        setApplicationSize(vscPid, size.width, size.height);
+        break;
+      };
+    }
+  }
+  return event;
+}
+
+void eventTapThread() {
+  // Create event mask for what we want
+  CGEventMask mask = CGEventMaskBit(kCGEventKeyDown);
+
+  // Make tap
+  CFMachPortRef tap =
+      CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap,
+                       kCGEventTapOptionDefault, mask, kpCallback, nullptr);
+
+  // Get source and loop
+  CFRunLoopSourceRef source =
+      CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0);
+  CFRunLoopRef loop = CFRunLoopGetCurrent();
+
+  // Activate event loop
+  CGEventTapEnable(tap, true);
+  CFRunLoopAddSource(loop, source, kCFRunLoopDefaultMode);
+
+  // Run event loop
+  while (running) {
+    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, true);
+  }
+
+  // Cleanup
+  CFRunLoopRemoveSource(loop, source, kCFRunLoopDefaultMode);
+  CFRelease(source);
+  CFRelease(tap);
+}
+
 void handleSigint(int) { running.store(false); }
 
 int main() {
   // Handle sigint
   signal(SIGINT, handleSigint);
+
+  // Start full-sized
+  setApplicationPos(vscPid, 0, 0);
+  setApplicationSize(vscPid, size.width, size.height);
 
   // Start listener thread
   std::thread kp(eventTapThread);
@@ -163,7 +186,7 @@ int main() {
       CFNumberGetValue(windowPid, kCFNumberIntType, &pid);
 
       // Skip VSCodium and seen PIDs
-      if (seen.count(pid) || pid == 33410) {
+      if (seen.count(pid) || pid == vscPid) {
         continue;
       }
 
@@ -180,12 +203,6 @@ int main() {
       // Add to list of seen
       seen.insert(pid);
     }
-
-    // Play with VSCodium window
-    CGSize size = getScreenSize();
-    // printf("Screen is %dx%d\n", (int)size.width, (int)size.height);
-    setApplicationPos(33410, 0, 0);
-    setApplicationSize(33410, size.width, size.height);
 
     // Cleanup
     CFRelease(windowList);
