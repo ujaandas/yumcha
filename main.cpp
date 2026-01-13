@@ -8,6 +8,64 @@ extern "C" void hideAllApps();
 extern "C" void hideAppByPID(pid_t pid);
 extern "C" void unhideAppByPID(pid_t pid);
 
+void setApplicationSize(pid_t pid, int x, int y) {
+  // Get accessibility object
+  AXUIElementRef app = AXUIElementCreateApplication(pid);
+
+  // Get windows
+  CFArrayRef windows;
+  if (AXUIElementCopyAttributeValue(app, kAXWindowsAttribute,
+                                    (CFTypeRef *)&windows) != kAXErrorSuccess) {
+    CFRelease(app);
+    return;
+  }
+
+  // Iterate over windows
+  const int numWindows = CFArrayGetCount(windows);
+  for (CFIndex i = 0; i < numWindows; i++) {
+    // Get window object
+    AXUIElementRef window = (AXUIElementRef)CFArrayGetValueAtIndex(windows, i);
+
+    // Set size
+    CGSize size = CGSizeMake(x, y);
+    AXValueRef sizeValue = AXValueCreate(kAXValueTypeCGSize, &size);
+    AXUIElementSetAttributeValue(window, kAXSizeAttribute, sizeValue);
+    CFRelease(sizeValue);
+  }
+
+  CFRelease(windows);
+  CFRelease(app);
+}
+
+void setApplicationPos(pid_t pid, int x, int y) {
+  // Get accessibility object
+  AXUIElementRef app = AXUIElementCreateApplication(pid);
+
+  // Get windows
+  CFArrayRef windows;
+  if (AXUIElementCopyAttributeValue(app, kAXWindowsAttribute,
+                                    (CFTypeRef *)&windows) != kAXErrorSuccess) {
+    CFRelease(app);
+    return;
+  }
+
+  // Iterate over windows
+  const int numWindows = CFArrayGetCount(windows);
+  for (CFIndex i = 0; i < numWindows; i++) {
+    // Get window object
+    AXUIElementRef window = (AXUIElementRef)CFArrayGetValueAtIndex(windows, i);
+
+    // Set position
+    const CGPoint pos = CGPointMake(x, y);
+    AXValueRef posValue = AXValueCreate(kAXValueTypeCGPoint, &pos);
+    AXUIElementSetAttributeValue(window, kAXPositionAttribute, posValue);
+    CFRelease(posValue);
+  }
+
+  CFRelease(windows);
+  CFRelease(app);
+}
+
 int main() {
   // Track seen PIDs
   std::unordered_set<pid_t> seen;
@@ -52,41 +110,8 @@ int main() {
   }
 
   // Play with VSCodium window
-
-  // Get accessibility object
-  AXUIElementRef app = AXUIElementCreateApplication(33410);
-
-  // Get windows
-  CFArrayRef vscWindows;
-  if (AXUIElementCopyAttributeValue(app, kAXWindowsAttribute,
-                                    (CFTypeRef *)&vscWindows) !=
-      kAXErrorSuccess) {
-    CFRelease(app);
-    return 1;
-  }
-
-  // Iterate over windows
-  numWindows = CFArrayGetCount(vscWindows);
-  for (CFIndex i = 0; i < numWindows; i++) {
-    // Get window object
-    AXUIElementRef window =
-        (AXUIElementRef)CFArrayGetValueAtIndex(vscWindows, i);
-
-    // Set position
-    const CGPoint pos = CGPointMake(300, 300);
-    AXValueRef posValue = AXValueCreate(kAXValueTypeCGPoint, &pos);
-    AXUIElementSetAttributeValue(window, kAXPositionAttribute, posValue);
-    CFRelease(posValue);
-
-    // Set size
-    CGSize size = CGSizeMake(300, 300);
-    AXValueRef sizeValue = AXValueCreate(kAXValueTypeCGSize, &size);
-    AXUIElementSetAttributeValue(window, kAXSizeAttribute, sizeValue);
-    CFRelease(sizeValue);
-  }
+  setApplicationSize(33410, 300, 300);
 
   CFRelease(windowList);
-  CFRelease(vscWindows);
-  CFRelease(app);
   return 0;
 }
