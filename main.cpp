@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <unordered_set>
 
-extern "C" void hideAllApps();
+extern "C" CGSize getScreenSize();
 extern "C" void hideAppByPID(pid_t pid);
 extern "C" void unhideAppByPID(pid_t pid);
 
@@ -110,7 +110,10 @@ int main() {
   }
 
   // Play with VSCodium window
-  setApplicationSize(33410, 300, 300);
+  CGSize size = getScreenSize();
+  printf("Screen is %dx%d\n", (int)size.width, (int)size.height);
+  setApplicationPos(33410, 0, 0);
+  setApplicationSize(33410, size.width, size.height);
 
   CFRelease(windowList);
   return 0;
