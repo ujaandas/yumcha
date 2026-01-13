@@ -15,11 +15,28 @@ std::atomic<bool> running{true};
 CGEventRef kpCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event,
                       void *refcon) {
   if (type == kCGEventKeyDown) {
-    CGKeyCode key = CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
+    CGKeyCode keycode =
+        CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
     CGEventFlags flags = CGEventGetFlags(event);
-    printf("Keycode: %d\n", key);
     if (flags & kCGEventFlagMaskAlternate) {
-      printf("  Option is down\n");
+      switch ((int)keycode) {
+      // opt+h
+      case 4:
+        std::printf("left\n");
+        break;
+      // opt+j
+      case 38:
+        std::printf("down\n");
+        break;
+      // opt+k
+      case 40:
+        std::printf("up\n");
+        break;
+      // opt+l
+      case 37:
+        std::printf("right\n");
+        break;
+      };
     }
   }
   return event;
