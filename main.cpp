@@ -1,8 +1,10 @@
+#include <ApplicationServices/ApplicationServices.h>
 #include <CoreGraphics/CoreGraphics.h>
 #include <cstdio>
 #include <unistd.h>
 #include <unordered_set>
 
+extern "C" void hideAllApps();
 extern "C" void hideAppByPID(pid_t pid);
 extern "C" void unhideAppByPID(pid_t pid);
 
@@ -11,7 +13,7 @@ int main() {
   std::unordered_set<pid_t> seen;
 
   // Get list of visible windows
-  CFArrayRef windowList =
+  const CFArrayRef windowList =
       CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID);
 
   // Get number of visible windows
@@ -49,6 +51,42 @@ int main() {
     seen.insert(pid);
   }
 
+  // Play with VSCodium window
+
+  // Get accessibility object
+  AXUIElementRef app = AXUIElementCreateApplication(33410);
+
+  // Get windows
+  CFArrayRef vscWindows;
+  if (AXUIElementCopyAttributeValue(app, kAXWindowsAttribute,
+                                    (CFTypeRef *)&vscWindows) !=
+      kAXErrorSuccess) {
+    CFRelease(app);
+    return 1;
+  }
+
+  // Iterate over windows
+  numWindows = CFArrayGetCount(vscWindows);
+  for (CFIndex i = 0; i < numWindows; i++) {
+    // Get window object
+    AXUIElementRef window =
+        (AXUIElementRef)CFArrayGetValueAtIndex(vscWindows, i);
+
+    // Set position
+    const CGPoint pos = CGPointMake(300, 300);
+    AXValueRef posValue = AXValueCreate(kAXValueTypeCGPoint, &pos);
+    AXUIElementSetAttributeValue(window, kAXPositionAttribute, posValue);
+    CFRelease(posValue);
+
+    // Set size
+    CGSize size = CGSizeMake(300, 300);
+    AXValueRef sizeValue = AXValueCreate(kAXValueTypeCGSize, &size);
+    AXUIElementSetAttributeValue(window, kAXSizeAttribute, sizeValue);
+    CFRelease(sizeValue);
+  }
+
   CFRelease(windowList);
+  CFRelease(vscWindows);
+  CFRelease(app);
   return 0;
 }
