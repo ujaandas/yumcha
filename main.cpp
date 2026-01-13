@@ -1,12 +1,54 @@
 #include <ApplicationServices/ApplicationServices.h>
 #include <CoreGraphics/CoreGraphics.h>
+#include <atomic>
 #include <cstdio>
+#include <thread>
 #include <unistd.h>
 #include <unordered_set>
 
 extern "C" CGSize getScreenSize();
 extern "C" void hideAppByPID(pid_t pid);
 extern "C" void unhideAppByPID(pid_t pid);
+
+std::atomic<bool> running{true};
+
+CGEventRef kpCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event,
+                      void *refcon) {
+  if (type == kCGEventKeyDown) {
+    CGKeyCode key = CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
+    printf("Keycode: %d\n", key);
+  }
+  return event;
+}
+
+void eventTapThread() {
+  // Create event mask for what we want
+  CGEventMask mask = CGEventMaskBit(kCGEventKeyDown);
+
+  // Make tap
+  CFMachPortRef tap =
+      CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap,
+                       kCGEventTapOptionDefault, mask, kpCallback, nullptr);
+
+  // Get source and loop
+  CFRunLoopSourceRef source =
+      CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0);
+  CFRunLoopRef loop = CFRunLoopGetCurrent();
+
+  // Activate event loop
+  CGEventTapEnable(tap, true);
+  CFRunLoopAddSource(loop, source, kCFRunLoopDefaultMode);
+
+  // Run event loop
+  while (running) {
+    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, true);
+  }
+
+  // Cleanup
+  CFRunLoopRemoveSource(loop, source, kCFRunLoopDefaultMode);
+  CFRelease(source);
+  CFRelease(tap);
+}
 
 void setApplicationSize(pid_t pid, int x, int y) {
   // Get accessibility object
@@ -66,55 +108,72 @@ void setApplicationPos(pid_t pid, int x, int y) {
   CFRelease(app);
 }
 
+void handleSigint(int) { running.store(false); }
+
 int main() {
-  // Track seen PIDs
-  std::unordered_set<pid_t> seen;
+  // Handle sigint
+  signal(SIGINT, handleSigint);
 
-  // Get list of visible windows
-  const CFArrayRef windowList =
-      CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID);
+  // Start listener thread
+  std::thread kp(eventTapThread);
 
-  // Get number of visible windows
-  int numWindows = CFArrayGetCount(windowList);
+  while (running.load()) {
+    // Track seen PIDs
+    std::unordered_set<pid_t> seen;
 
-  // Iterate over windows
-  for (int i = 0; i < numWindows; i++) {
+    // Get list of visible windows
+    const CFArrayRef windowList =
+        CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID);
 
-    // Get window dict
-    const CFDictionaryRef windowInfo =
-        (CFDictionaryRef)CFArrayGetValueAtIndex(windowList, i);
+    // Get number of visible windows
+    int numWindows = CFArrayGetCount(windowList);
 
-    // Get window PID
-    int pid = 0;
-    const CFNumberRef windowPid =
-        (CFNumberRef)CFDictionaryGetValue(windowInfo, kCGWindowOwnerPID);
-    CFNumberGetValue(windowPid, kCFNumberIntType, &pid);
+    // Iterate over windows
+    for (int i = 0; i < numWindows; i++) {
 
-    // Skip VSCodium and seen PIDs
-    if (seen.count(pid) || pid == 33410) {
-      continue;
+      // Get window dict
+      const CFDictionaryRef windowInfo =
+          (CFDictionaryRef)CFArrayGetValueAtIndex(windowList, i);
+
+      // Get window PID
+      int pid = 0;
+      const CFNumberRef windowPid =
+          (CFNumberRef)CFDictionaryGetValue(windowInfo, kCGWindowOwnerPID);
+      CFNumberGetValue(windowPid, kCFNumberIntType, &pid);
+
+      // Skip VSCodium and seen PIDs
+      if (seen.count(pid) || pid == 33410) {
+        continue;
+      }
+
+      // Get window name
+      char name[256];
+      const CFStringRef windowName =
+          (CFStringRef)CFDictionaryGetValue(windowInfo, kCGWindowOwnerName);
+      CFStringGetCString(windowName, name, sizeof(name), kCFStringEncodingUTF8);
+
+      // Hide window
+      // printf("%s-> PID %d\n", name, pid);
+      hideAppByPID(pid);
+
+      // Add to list of seen
+      seen.insert(pid);
     }
 
-    // Get window name
-    char name[256];
-    const CFStringRef windowName =
-        (CFStringRef)CFDictionaryGetValue(windowInfo, kCGWindowOwnerName);
-    CFStringGetCString(windowName, name, sizeof(name), kCFStringEncodingUTF8);
+    // Play with VSCodium window
+    CGSize size = getScreenSize();
+    // printf("Screen is %dx%d\n", (int)size.width, (int)size.height);
+    setApplicationPos(33410, 0, 0);
+    setApplicationSize(33410, size.width, size.height);
 
-    // Hide window
-    printf("%s-> PID %d\n", name, pid);
-    hideAppByPID(pid);
+    // Cleanup
+    CFRelease(windowList);
 
-    // Add to list of seen
-    seen.insert(pid);
+    // Avoid busy-wait
+    std::this_thread::sleep_for(std::chrono::milliseconds(16));
   }
 
-  // Play with VSCodium window
-  CGSize size = getScreenSize();
-  printf("Screen is %dx%d\n", (int)size.width, (int)size.height);
-  setApplicationPos(33410, 0, 0);
-  setApplicationSize(33410, size.width, size.height);
+  kp.join();
 
-  CFRelease(windowList);
   return 0;
 }
