@@ -1,0 +1,66 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-c",
+      "-std=gnu++17",
+      "-Wall",
+      "-framework",
+      "Cocoa",
+      "-o",
+      "wm",
+      "main.cpp"
+    ],
+    "directory": "/Users/ooj/Dev/Projects/macos-wm",
+    "file": "/Users/ooj/Dev/Projects/macos-wm/main.cpp",
+    "output": "/Users/ooj/Dev/Projects/macos-wm/wm"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-c",
+      "-std=gnu++17",
+      "-Wall",
+      "-framework",
+      "Cocoa",
+      "-o",
+      "wm",
+      "tree.cpp"
+    ],
+    "directory": "/Users/ooj/Dev/Projects/macos-wm",
+    "file": "/Users/ooj/Dev/Projects/macos-wm/tree.cpp",
+    "output": "/Users/ooj/Dev/Projects/macos-wm/wm"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-c",
+      "-std=gnu++17",
+      "-Wall",
+      "-framework",
+      "Cocoa",
+      "-o",
+      "wm",
+      "hide.mm"
+    ],
+    "directory": "/Users/ooj/Dev/Projects/macos-wm",
+    "file": "/Users/ooj/Dev/Projects/macos-wm/hide.mm",
+    "output": "/Users/ooj/Dev/Projects/macos-wm/wm"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-c",
+      "-std=gnu++17",
+      "-Wall",
+      "-framework",
+      "Cocoa",
+      "-o",
+      "wm",
+      "screen.mm"
+    ],
+    "directory": "/Users/ooj/Dev/Projects/macos-wm",
+    "file": "/Users/ooj/Dev/Projects/macos-wm/screen.mm",
+    "output": "/Users/ooj/Dev/Projects/macos-wm/wm"
+  }
+]
