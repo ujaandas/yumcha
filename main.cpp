@@ -1,6 +1,7 @@
 #include <ApplicationServices/ApplicationServices.h>
 #include <CoreGraphics/CoreGraphics.h>
 #include <atomic>
+#include <csignal>
 #include <cstdio>
 #include <thread>
 #include <unistd.h>
@@ -10,7 +11,7 @@ extern "C" CGSize getScreenSize();
 extern "C" void hideAppByPID(pid_t pid);
 extern "C" void unhideAppByPID(pid_t pid);
 
-const pid_t vscPid = 33410;
+const pid_t vscPid = 3439;
 std::atomic<bool> running{true};
 CGSize size = getScreenSize();
 
@@ -35,7 +36,11 @@ void setApplicationSize(pid_t pid, int x, int y) {
     // Set size
     CGSize size = CGSizeMake(x, y);
     AXValueRef sizeValue = AXValueCreate(kAXValueTypeCGSize, &size);
-    AXUIElementSetAttributeValue(window, kAXSizeAttribute, sizeValue);
+
+    AXError err =
+        AXUIElementSetAttributeValue(window, kAXSizeAttribute, sizeValue);
+    printf("set size err: %d\n", err);
+
     CFRelease(sizeValue);
   }
 
@@ -64,6 +69,7 @@ void setApplicationPos(pid_t pid, int x, int y) {
     // Set position
     const CGPoint pos = CGPointMake(x, y);
     AXValueRef posValue = AXValueCreate(kAXValueTypeCGPoint, &pos);
+
     AXUIElementSetAttributeValue(window, kAXPositionAttribute, posValue);
     CFRelease(posValue);
   }
@@ -83,6 +89,10 @@ CGEventRef kpCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event,
 
     if (flags & kCGEventFlagMaskAlternate) {
       switch ((int)keycode) {
+      // opt+q
+      case 12:
+        std::printf("quit\n");
+        std::raise(SIGINT);
       // opt+h
       case 4:
         std::printf("left\n");
@@ -185,16 +195,16 @@ int main() {
           (CFNumberRef)CFDictionaryGetValue(windowInfo, kCGWindowOwnerPID);
       CFNumberGetValue(windowPid, kCFNumberIntType, &pid);
 
-      // Skip VSCodium and seen PIDs
-      if (seen.count(pid) || pid == vscPid) {
-        continue;
-      }
-
       // Get window name
       char name[256];
       const CFStringRef windowName =
           (CFStringRef)CFDictionaryGetValue(windowInfo, kCGWindowOwnerName);
       CFStringGetCString(windowName, name, sizeof(name), kCFStringEncodingUTF8);
+
+      // Skip VIPs
+      if (seen.count(pid) || pid == vscPid) {
+        continue;
+      }
 
       // Hide window
       // printf("%s-> PID %d\n", name, pid);
