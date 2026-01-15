@@ -2,9 +2,18 @@
 #include <memory>
 #include <queue>
 #include <utility>
+#include <variant>
 #include <vector>
 
-enum class NodeType { HSplit, VSplit, Window };
+struct HSplitNode {};
+
+struct VSplitNode {};
+
+struct WindowNode {
+  pid_t pid;
+};
+
+using NodeType = std::variant<HSplitNode, VSplitNode, WindowNode>;
 
 struct Node {
   NodeType type;
