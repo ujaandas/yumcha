@@ -1,3 +1,4 @@
+#include "tree.cpp"
 #include <ApplicationServices/ApplicationServices.h>
 #include <CoreGraphics/CoreGraphics.h>
 #include <atomic>
@@ -11,7 +12,7 @@ extern "C" CGSize getScreenSize();
 extern "C" void hideAppByPID(pid_t pid);
 extern "C" void unhideAppByPID(pid_t pid);
 
-const pid_t vscPid = 3439;
+const pid_t vscPid = 6261;
 std::atomic<bool> running{true};
 CGSize size = getScreenSize();
 
@@ -148,7 +149,7 @@ void eventTapThread() {
   CFRunLoopAddSource(loop, source, kCFRunLoopDefaultMode);
 
   // Run event loop
-  while (running) {
+  while (running.load()) {
     CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, true);
   }
 
@@ -163,6 +164,11 @@ void handleSigint(int) { running.store(false); }
 int main() {
   // Handle sigint
   signal(SIGINT, handleSigint);
+
+  // Initialize tree
+  Tree tree = Tree(VSplitNode{});
+  tree.addNode(Node{WindowNode{vscPid}});
+  tree.traverse();
 
   // Start full-sized
   setApplicationPos(vscPid, 0, 0);

@@ -1,4 +1,6 @@
 #include <cassert>
+#include <cstdio>
+#include <functional>
 #include <memory>
 #include <queue>
 #include <utility>
@@ -20,6 +22,10 @@ struct Node {
   std::vector<std::unique_ptr<Node>> children;
 };
 
+// Use boolean return value if we need to stop the outer loop
+typedef std::function<bool(Node *node)> tOpOnAllNodes;
+typedef std::function<bool(Node *node)> tOpOnAllWindowNodes;
+
 class Tree {
 private:
   // Default node is a horizonatal split
@@ -35,20 +41,28 @@ public:
   Tree(NodeType initNodeType)
       : root{std::make_unique<Node>(Node{initNodeType, {}})} {}
 
-  // For adding new windows
-  void addNode(Node nn) {
-    // Queue for BFS
+  // Traverse with BFS
+  void traverse(const tOpOnAllNodes allNodesFun = {},
+                const tOpOnAllWindowNodes allWindowNodesFun = {}) {
     std::queue<Node *> q;
     q.push(root.get());
 
     while (!q.empty()) {
+      // Get front node from queue
       Node *cur = q.front();
       q.pop();
 
-      // If < 2 children, add node
-      if (cur->children.size() < 2) {
-        cur->children.push_back(std::make_unique<Node>(std::move(nn)));
+      // Perform arbitrary node operation
+      if (allNodesFun && allNodesFun(cur)) {
         return;
+      };
+
+      // Perform window-node-specific operation
+      if (std::holds_alternative<WindowNode>(cur->type)) {
+        printf("pid of %d is a window\n", std::get<WindowNode>(cur->type).pid);
+        if (allWindowNodesFun && allWindowNodesFun(cur)) {
+          return;
+        }
       }
 
       // Add all children to queue
@@ -56,5 +70,17 @@ public:
         q.push(child.get());
       }
     }
+  };
+
+  // For adding new windows
+  void addNode(Node &&nn) {
+    traverse([&nn](Node *node) {
+      if (node->children.size() < 2) {
+        node->children.push_back(std::make_unique<Node>(std::move(nn)));
+        // stop outer traverasl
+        return true;
+      }
+      return false;
+    });
   }
 };
