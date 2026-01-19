@@ -3,16 +3,18 @@
 #include <CoreGraphics/CoreGraphics.h>
 #include <atomic>
 #include <csignal>
+#include <cstddef>
 #include <cstdio>
 #include <thread>
 #include <unistd.h>
 #include <unordered_set>
 
 extern "C" CGSize getScreenSize();
-extern "C" void hideAppByPID(pid_t pid);
-extern "C" void unhideAppByPID(pid_t pid);
+extern "C" bool isPidVisible(pid_t pid);
+extern "C" bool hideAppByPID(pid_t pid);
+extern "C" bool unhideAppByPID(pid_t pid);
 
-const pid_t vscPid = 6261;
+const pid_t vscPid = 17362;
 std::atomic<bool> running{true};
 CGSize size = getScreenSize();
 
@@ -168,7 +170,6 @@ int main() {
   // Initialize tree
   Tree tree = Tree(VSplitNode{});
   tree.addNode(Node{WindowNode{vscPid}});
-  tree.traverse();
 
   // Start full-sized
   setApplicationPos(vscPid, 0, 0);
@@ -176,19 +177,21 @@ int main() {
 
   // Start listener thread
   std::thread kp(eventTapThread);
+  int lastVisibleCount = 0;
 
+  // Each iteration is a "frame"
   while (running.load()) {
-    // Track seen PIDs
-    std::unordered_set<pid_t> seen;
-
-    // Get list of visible windows
+    // Get list of visible windows for current frame
     const CFArrayRef windowList =
         CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID);
 
     // Get number of visible windows
     int numWindows = CFArrayGetCount(windowList);
 
-    // Iterate over windows
+    // Visible windows this frame
+    std::unordered_set<pid_t> windows;
+
+    // Iterate over windows for this frame
     for (int i = 0; i < numWindows; i++) {
 
       // Get window dict
@@ -207,17 +210,19 @@ int main() {
           (CFStringRef)CFDictionaryGetValue(windowInfo, kCGWindowOwnerName);
       CFStringGetCString(windowName, name, sizeof(name), kCFStringEncodingUTF8);
 
-      // Skip VIPs
-      if (seen.count(pid) || pid == vscPid) {
+      // TODO: Look into why hidden appears flipped?
+      // Hide whatever we can, and skip our VIP
+      if (pid == vscPid || !hideAppByPID(pid)) {
         continue;
       }
 
-      // Hide window
-      // printf("%s-> PID %d\n", name, pid);
-      hideAppByPID(pid);
-
-      // Add to list of seen
-      seen.insert(pid);
+      // Insert into set of all "visible" windows
+      windows.insert(pid);
+    }
+    if (windows.size() != lastVisibleCount) {
+      std::printf("window count changed! now=%d old=%d\n", (int)windows.size(),
+                  lastVisibleCount);
+      lastVisibleCount = windows.size();
     }
 
     // Cleanup
