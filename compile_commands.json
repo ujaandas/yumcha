@@ -3,7 +3,7 @@
     "arguments": [
       "/usr/bin/clang++",
       "-c",
-      "-std=gnu++17",
+      "-std=gnu++23",
       "-Wall",
       "-framework",
       "Cocoa",
@@ -19,7 +19,7 @@
     "arguments": [
       "/usr/bin/clang++",
       "-c",
-      "-std=gnu++17",
+      "-std=gnu++23",
       "-Wall",
       "-framework",
       "Cocoa",
@@ -35,7 +35,7 @@
     "arguments": [
       "/usr/bin/clang++",
       "-c",
-      "-std=gnu++17",
+      "-std=gnu++23",
       "-Wall",
       "-framework",
       "Cocoa",
@@ -51,7 +51,7 @@
     "arguments": [
       "/usr/bin/clang++",
       "-c",
-      "-std=gnu++17",
+      "-std=gnu++23",
       "-Wall",
       "-framework",
       "Cocoa",

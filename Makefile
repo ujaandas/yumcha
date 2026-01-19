@@ -1,5 +1,5 @@
 CXX = clang++
-CXXFLAGS = -std=gnu++17 -Wall -framework Cocoa
+CXXFLAGS = -std=gnu++23 -Wall -framework Cocoa
 TARGET = wm
 SRC = $(wildcard *.cpp *.mm)
 
