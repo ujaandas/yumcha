@@ -8,16 +8,26 @@
 //   }
 // }
 
-extern "C" void hideAppByPID(pid_t pid) {
+extern "C" bool isPidVisible(pid_t pid) {
   NSRunningApplication *app =
       [NSRunningApplication runningApplicationWithProcessIdentifier:pid];
 
-  [app hide];
+  return app.hidden;
 }
 
-extern "C" void unhideAppByPID(pid_t pid) {
+// Return true if operation was successful
+extern "C" bool hideAppByPID(pid_t pid) {
   NSRunningApplication *app =
       [NSRunningApplication runningApplicationWithProcessIdentifier:pid];
 
-  [app unhide];
+  // Flip this for better ergonomics
+  return ![app hide];
+}
+
+// Return true if operation was successful
+extern "C" bool unhideAppByPID(pid_t pid) {
+  NSRunningApplication *app =
+      [NSRunningApplication runningApplicationWithProcessIdentifier:pid];
+
+  return ![app unhide];
 }
