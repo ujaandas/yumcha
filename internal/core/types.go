@@ -1,14 +1,12 @@
 package core
 
-type WindowID int
-
 type Rect struct {
 	X, Y          int
 	Width, Height int
 }
 
 type Window struct {
-	ID     WindowID
+	ID     int
 	Rect   Rect
 	Hidden bool
 }
