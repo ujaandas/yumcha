@@ -3,6 +3,8 @@
 package platform
 
 import (
+	"fmt"
+
 	"github.com/progrium/darwinkit/macos/appkit"
 	"github.com/ujaandas/yumcha/internal/core"
 )
@@ -16,7 +18,11 @@ func defaultPlatform() Platform {
 func (darwinPlatform) Screens() ([]core.Screen, error) {
 	akScreens := appkit.Screen_Screens()
 
-	screens := make([]frameLike, 0, len(akScreens))
+	if len(akScreens) < 1 {
+		return nil, fmt.Errorf("no screens found")
+	}
+
+	screens := make([]frameLike, len(akScreens))
 
 	for i := range akScreens {
 		screens[i] = akScreens[i]

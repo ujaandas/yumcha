@@ -20,12 +20,9 @@ func Run(ctx context.Context, cfg Config) error {
 
 	p := platform.Default()
 
-	window, err := p.FocusedWindow()
-	if err != nil {
+	if _, err := p.Screens(); err != nil {
 		log.Fatalf("error fetching focused window: %v", err)
 	}
-
-	log.Printf("window id: %d", window.ID)
 
 	return nil
 
