@@ -1,17 +1,16 @@
 package platform
 
-type Size struct {
-	Width  int
-	Height int
-}
+import "github.com/ujaandas/yumcha/internal/core"
 
 type Platform interface {
-	ScreenSize() (Size, error)
-	SetApplicationPos(pid, x, y int) error
-	SetApplicationSize(pid, width, height int) error
-	VisiblePIDs() ([]int, error)
-	HideAppByPID(pid int) (bool, error)
-	UnhideAppByPID(pid int) (bool, error)
+	Screens() ([]core.Screen, error)
+	FocusedWindow() (core.Window, error)
+	Windows() ([]core.Window, error)
+	VisibleWindows() ([]core.Window, error)
+
+	TransformWindow(core.Window) error
+	ShowWindow(core.Window) error
+	HideWindow(core.Window) error
 }
 
 func Default() Platform {

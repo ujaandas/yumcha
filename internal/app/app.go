@@ -3,10 +3,9 @@ package app
 import (
 	"context"
 	"fmt"
-	"time"
+	"log"
 
 	"github.com/ujaandas/yumcha/internal/platform"
-	"github.com/ujaandas/yumcha/internal/tree"
 )
 
 type Config struct {
@@ -21,57 +20,66 @@ func Run(ctx context.Context, cfg Config) error {
 
 	p := platform.Default()
 
-	screen, err := p.ScreenSize()
+	window, err := p.FocusedWindow()
 	if err != nil {
-		return err
+		log.Fatalf("error fetching focused window: %v", err)
 	}
 
-	t := tree.New(tree.VSplitNode{})
-	t.AddNode(tree.Node{Window: tree.WindowNode{PID: cfg.TargetPID}})
+	log.Printf("window id: %d", window.ID)
 
-	if err := p.SetApplicationPos(cfg.TargetPID, 0, 0); err != nil {
-		return err
-	}
-	if err := p.SetApplicationSize(cfg.TargetPID, screen.Width, screen.Height); err != nil {
-		return err
-	}
+	return nil
 
-	ticker := time.NewTicker(16 * time.Millisecond)
-	defer ticker.Stop()
+	// screen, err := p.ScreenSize(p.GetFocusedWindow())
+	// if err != nil {
+	// 	return err
+	// }
 
-	lastVisibleCount := 0
+	// t := tree.New(tree.VSplitNode{})
+	// t.AddNode(tree.Node{Window: tree.WindowNode{PID: cfg.TargetPID}})
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
+	// if err := p.SetApplicationPos(cfg.TargetPID, 0, 0); err != nil {
+	// 	return err
+	// }
+	// if err := p.SetApplicationSize(cfg.TargetPID, screen.Width, screen.Height); err != nil {
+	// 	return err
+	// }
 
-		case <-ticker.C:
-			pids, err := p.VisiblePIDs()
-			if err != nil {
-				return err
-			}
+	// ticker := time.NewTicker(16 * time.Millisecond)
+	// defer ticker.Stop()
 
-			visible := map[int]struct{}{}
-			for _, pid := range pids {
-				if pid == cfg.TargetPID {
-					continue
-				}
-				hidden, err := p.HideAppByPID(pid)
-				if err != nil {
-					return err
-				}
-				if hidden {
-					visible[pid] = struct{}{}
-				}
-			}
+	// lastVisibleCount := 0
 
-			if len(visible) != lastVisibleCount {
-				if cfg.Debug {
-					fmt.Printf("window count changed! now=%d old=%d\n", len(visible), lastVisibleCount)
-				}
-				lastVisibleCount = len(visible)
-			}
-		}
-	}
+	// for {
+	// 	select {
+	// 	case <-ctx.Done():
+	// 		return nil
+
+	// 	case <-ticker.C:
+	// 		pids, err := p.VisiblePIDs()
+	// 		if err != nil {
+	// 			return err
+	// 		}
+
+	// 		visible := map[int]struct{}{}
+	// 		for _, pid := range pids {
+	// 			if pid == cfg.TargetPID {
+	// 				continue
+	// 			}
+	// 			hidden, err := p.HideAppByPID(pid)
+	// 			if err != nil {
+	// 				return err
+	// 			}
+	// 			if hidden {
+	// 				visible[pid] = struct{}{}
+	// 			}
+	// 		}
+
+	// 		if len(visible) != lastVisibleCount {
+	// 			if cfg.Debug {
+	// 				fmt.Printf("window count changed! now=%d old=%d\n", len(visible), lastVisibleCount)
+	// 			}
+	// 			lastVisibleCount = len(visible)
+	// 		}
+	// 	}
+	// }
 }

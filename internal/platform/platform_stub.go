@@ -2,18 +2,19 @@
 
 package platform
 
+import "github.com/ujaandas/yumcha/internal/core"
+
 type stubPlatform struct{}
 
 func defaultPlatform() Platform {
 	return stubPlatform{}
 }
 
-func (stubPlatform) ScreenSize() (Size, error) {
-	return Size{Width: 1440, Height: 900}, nil
-}
+func (stubPlatform) Screens() ([]core.Screen, error)        { panic("Unimplemented!") }
+func (stubPlatform) FocusedWindow() (core.Window, error)    { panic("Unimplemented!") }
+func (stubPlatform) Windows() ([]core.Window, error)        { panic("Unimplemented!") }
+func (stubPlatform) VisibleWindows() ([]core.Window, error) { panic("Unimplemented!") }
 
-func (stubPlatform) SetApplicationPos(pid, x, y int) error  { return nil }
-func (stubPlatform) SetApplicationSize(pid, w, h int) error { return nil }
-func (stubPlatform) VisiblePIDs() ([]int, error)            { return []int{}, nil }
-func (stubPlatform) HideAppByPID(pid int) (bool, error)     { return true, nil }
-func (stubPlatform) UnhideAppByPID(pid int) (bool, error)   { return true, nil }
+func (stubPlatform) TransformWindow(core.Window) error { panic("Unimplemented!") }
+func (stubPlatform) ShowWindow(core.Window) error      { panic("Unimplemented!") }
+func (stubPlatform) HideWindow(core.Window) error      { panic("Unimplemented!") }
