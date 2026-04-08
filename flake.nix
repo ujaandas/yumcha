@@ -1,26 +1,30 @@
 {
+  description = "Simple go dev flake";
+
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-parts.url = "github:hercules-ci/flake-parts";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs =
-    inputs@{ flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-      ];
-
-      perSystem =
-        { pkgs, ... }:
-        {
-          devShells.default = pkgs.mkShell {
-            packages = with pkgs; [
-              go
-              go-tools
-            ];
-          };
+    {
+      nixpkgs,
+      flake-utils,
+      ...
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in
+      {
+        devShell = pkgs.mkShell {
+          buildInputs = with pkgs; [
+            go
+            gopls
+            go-tools
+          ];
         };
-    };
+      }
+    );
 }
