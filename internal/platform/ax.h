@@ -5,3 +5,5 @@
 #include <unistd.h>
 
 int focused_window_rect_for_pid(pid_t pid, int *x, int *y, int *w, int *h);
+
+int get_window_list(CFArrayRef *windows, int *windowLen);

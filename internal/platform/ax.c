@@ -56,3 +56,19 @@ int focused_window_rect_for_pid(pid_t pid, int *x, int *y, int *w, int *h) {
   *h = (int)size.height;
   return 0;
 }
+
+int get_window_list(CFArrayRef *windows, int *windowLen) {
+  const CFArrayRef windowList =
+      CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID);
+
+  if (!windowList) {
+    return 1;
+  }
+
+  int numWindows = CFArrayGetCount(windowList);
+
+  *windows = windowList;
+  *windowLen = numWindows;
+
+  return 0;
+}

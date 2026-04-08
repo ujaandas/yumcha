@@ -48,7 +48,44 @@ func (darwinPlatform) FocusedWindow() (foundation.Rect, error) {
 	}, nil
 }
 
-func (darwinPlatform) Windows() ([]foundation.Rect, error)        { panic("Unimplemented!") }
+func (darwinPlatform) Windows() ([]Window, error) {
+	var windows C.CFArrayRef
+	var numWindows C.int
+	rc := C.get_window_list(&windows, &numWindows)
+	defer C.CFRelease(C.CFTypeRef(windows))
+	if rc != 0 {
+		return []Window{}, fmt.Errorf("could not fetch window list, rc=%d", int(rc))
+	}
+
+	count := int(numWindows)
+	result := make([]Window, 0, count)
+
+	for i := 0; i < count; i++ {
+		dictRef := C.CFArrayGetValueAtIndex(windows, C.CFIndex(i))
+		if dictRef == nil {
+			continue
+		}
+		// TODO: Implement smth like these
+		bounds := foundation.RectFromCFDictionary(dictRef, "Bounds")
+		pid := foundation.IntFromCFDictionary(dictRef, "OwnerPID")
+		windowID := foundation.UInt32FromCFDictionary(dictRef, "WindowNumber")
+		title := foundation.StringFromCFDictionary(dictRef, "Name")
+		layer := foundation.IntFromCFDictionary(dictRef, "Layer")
+		alpha := foundation.FloatFromCFDictionary(dictRef, "Alpha")
+		visible := alpha > 0.0
+
+		result = append(result, Window{
+			Rect:     bounds,
+			PID:      pid,
+			WindowID: windowID,
+			Title:    title,
+			Layer:    layer,
+			Visible:  visible,
+		})
+	}
+
+	return result, nil
+}
 func (darwinPlatform) VisibleWindows() ([]foundation.Rect, error) { panic("Unimplemented!") }
 
 func (darwinPlatform) TransformWindow(foundation.Rect) error { panic("Unimplemented!") }
