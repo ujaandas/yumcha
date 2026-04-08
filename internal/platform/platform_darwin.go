@@ -16,22 +16,13 @@ func defaultPlatform() Platform {
 func (darwinPlatform) Screens() ([]core.Screen, error) {
 	akScreens := appkit.Screen_Screens()
 
-	screens := make([]core.Screen, 0, len(akScreens))
+	screens := make([]frameLike, 0, len(akScreens))
 
-	for i, v := range akScreens {
-		// TODO: query DeviceDescription() with String_StringWithUTF8String("NSScreenNumber")
-		frame := v.Frame()
-		screens = append(screens, core.Screen{
-			ID: i,
-			Rect: core.Rect{
-				X:      int(frame.Origin.X),
-				Y:      int(frame.Origin.Y),
-				Width:  int(frame.Size.Width),
-				Height: int(frame.Size.Height),
-			},
-		})
+	for i := range akScreens {
+		screens[i] = akScreens[i]
 	}
-	return screens, nil
+
+	return convertScreens(screens), nil
 }
 
 func (darwinPlatform) FocusedWindow() (core.Window, error)    { panic("Unimplemented!") }
