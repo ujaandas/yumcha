@@ -23,6 +23,7 @@
             go
             gopls
             go-tools
+            libffi
           ];
         };
       }
