@@ -1,15 +1,14 @@
-// platform_darwin_test.go
 //go:build darwin
 // +build darwin
 
-package platform
+package darwin
 
 import (
 	"testing"
 )
 
 func TestDarwinScreens(t *testing.T) {
-	p := darwinPlatform{}
+	p := WindowAPI{}
 
 	screens, err := p.Screens()
 	if err != nil {
@@ -29,7 +28,7 @@ func TestDarwinScreens(t *testing.T) {
 }
 
 func TestDarwinFocusedWindow(t *testing.T) {
-	p := darwinPlatform{}
+	p := WindowAPI{}
 
 	window, err := p.FocusedWindow()
 	if err != nil {

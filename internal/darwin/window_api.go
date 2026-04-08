@@ -1,6 +1,6 @@
 //go:build darwin
 
-package platform
+package darwin
 
 // #cgo LDFLAGS: -framework Cocoa -framework ApplicationServices -framework CoreFoundation
 // #include "ax.h"
@@ -13,13 +13,18 @@ import (
 	"github.com/progrium/darwinkit/macos/foundation"
 )
 
-type darwinPlatform struct{}
-
-func defaultPlatform() Platform {
-	return darwinPlatform{}
+type Window struct {
+	Rect     foundation.Rect
+	PID      int
+	WindowID uint32
+	Title    string
+	Layer    int
+	Visible  bool
 }
 
-func (darwinPlatform) Screens() ([]appkit.Screen, error) {
+type WindowAPI struct{}
+
+func (WindowAPI) Screens() ([]appkit.Screen, error) {
 	akScreens := appkit.Screen_Screens()
 
 	if len(akScreens) < 1 {
@@ -29,7 +34,7 @@ func (darwinPlatform) Screens() ([]appkit.Screen, error) {
 	return akScreens, nil
 }
 
-func (darwinPlatform) FocusedWindow() (foundation.Rect, error) {
+func (WindowAPI) FocusedWindow() (foundation.Rect, error) {
 	app := appkit.Workspace_SharedWorkspace().FrontmostApplication()
 	if app.Ptr() == nil {
 		return foundation.Rect{}, fmt.Errorf("no frontmost application")
@@ -48,7 +53,7 @@ func (darwinPlatform) FocusedWindow() (foundation.Rect, error) {
 	}, nil
 }
 
-func (darwinPlatform) Windows() ([]Window, error) {
+func (WindowAPI) Windows() ([]Window, error) {
 	var windows C.CFArrayRef
 	var numWindows C.int
 	rc := C.get_window_list(&windows, &numWindows)
@@ -66,28 +71,28 @@ func (darwinPlatform) Windows() ([]Window, error) {
 			continue
 		}
 		// TODO: Implement smth like these
-		bounds := foundation.RectFromCFDictionary(dictRef, "Bounds")
-		pid := foundation.IntFromCFDictionary(dictRef, "OwnerPID")
-		windowID := foundation.UInt32FromCFDictionary(dictRef, "WindowNumber")
-		title := foundation.StringFromCFDictionary(dictRef, "Name")
-		layer := foundation.IntFromCFDictionary(dictRef, "Layer")
-		alpha := foundation.FloatFromCFDictionary(dictRef, "Alpha")
-		visible := alpha > 0.0
+		// bounds := foundation.RectFromCFDictionary(dictRef, "Bounds")
+		// pid := foundation.IntFromCFDictionary(dictRef, "OwnerPID")
+		// windowID := foundation.UInt32FromCFDictionary(dictRef, "WindowNumber")
+		// title := foundation.StringFromCFDictionary(dictRef, "Name")
+		// layer := foundation.IntFromCFDictionary(dictRef, "Layer")
+		// alpha := foundation.FloatFromCFDictionary(dictRef, "Alpha")
+		// visible := alpha > 0.0
 
-		result = append(result, Window{
-			Rect:     bounds,
-			PID:      pid,
-			WindowID: windowID,
-			Title:    title,
-			Layer:    layer,
-			Visible:  visible,
-		})
+		// result = append(result, Window{
+		// 	Rect:     bounds,
+		// 	PID:      pid,
+		// 	WindowID: windowID,
+		// 	Title:    title,
+		// 	Layer:    layer,
+		// 	Visible:  visible,
+		// })
 	}
 
 	return result, nil
 }
-func (darwinPlatform) VisibleWindows() ([]foundation.Rect, error) { panic("Unimplemented!") }
+func (WindowAPI) VisibleWindows() ([]foundation.Rect, error) { panic("Unimplemented!") }
 
-func (darwinPlatform) TransformWindow(foundation.Rect) error { panic("Unimplemented!") }
-func (darwinPlatform) ShowWindow(foundation.Rect) error      { panic("Unimplemented!") }
-func (darwinPlatform) HideWindow(foundation.Rect) error      { panic("Unimplemented!") }
+func (WindowAPI) TransformWindow(foundation.Rect) error { panic("Unimplemented!") }
+func (WindowAPI) ShowWindow(foundation.Rect) error      { panic("Unimplemented!") }
+func (WindowAPI) HideWindow(foundation.Rect) error      { panic("Unimplemented!") }
