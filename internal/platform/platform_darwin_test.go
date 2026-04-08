@@ -21,11 +21,9 @@ func TestDarwinScreens(t *testing.T) {
 	}
 
 	for i, s := range screens {
-		if s.ID != i {
-			t.Errorf("screen ID mismatch: got %d, want %d", s.ID, i)
-		}
-		if s.Rect.Width <= 0 || s.Rect.Height <= 0 {
-			t.Errorf("screen %d has invalid size: %+v", i, s.Rect)
+		frame := s.Frame()
+		if frame.Size.Width <= 0 || frame.Size.Height <= 0 {
+			t.Errorf("screen %d has invalid size: %+v", i, frame)
 		}
 	}
 }
@@ -38,14 +36,14 @@ func TestDarwinFocusedWindow(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	t.Logf("got window at: %dx%d, at pos: %dx%d", window.Rect.Width, window.Rect.Height, window.Rect.X, window.Rect.Y)
+	t.Logf("got window at: %.0fx%.0f, at pos: %.0fx%.0f", window.Size.Width, window.Size.Height, window.Origin.X, window.Origin.Y)
 
-	if window.Rect.Width <= 0 || window.Rect.Height <= 0 {
-		t.Errorf("window dimensions broken: %dx%d", window.Rect.Width, window.Rect.Height)
+	if window.Size.Width <= 0 || window.Size.Height <= 0 {
+		t.Errorf("window dimensions broken: %.0fx%.0f", window.Size.Width, window.Size.Height)
 	}
 
-	if window.Rect.X < 0 || window.Rect.Y < 0 {
-		t.Errorf("window position broken: %dx%d", window.Rect.X, window.Rect.Y)
+	if window.Origin.X < 0 || window.Origin.Y < 0 {
+		t.Errorf("window position broken: %.0fx%.0f", window.Origin.X, window.Origin.Y)
 	}
 
 }
