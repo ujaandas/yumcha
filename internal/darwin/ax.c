@@ -72,3 +72,100 @@ int get_window_list(CFArrayRef *windows, int *windowLen) {
 
   return 0;
 }
+
+int get_window_dict_vals(CFArrayRef *windows, int i, int *pid, char *name,
+                         int *windowNumber, int *windowLayer,
+                         CGRect *windowBounds, int *windowSharingState,
+                         float *windowAlpha) {
+  const CFDictionaryRef windowInfo =
+      (CFDictionaryRef)CFArrayGetValueAtIndex(*windows, i);
+
+  // Get the window PID
+  CFNumberRef windowPid =
+      (CFNumberRef)CFDictionaryGetValue(windowInfo, kCGWindowOwnerPID);
+  if (windowPid) {
+    if (!CFNumberGetValue(windowPid, kCFNumberIntType, pid)) {
+      return 1; // Failed to get PID value
+    }
+  } else {
+    return 2; // PID not found in dictionary
+  }
+
+  // Get the window name
+  const CFStringRef windowName =
+      (CFStringRef)CFDictionaryGetValue(windowInfo, kCGWindowOwnerName);
+  if (windowName) {
+    CFStringGetCString(windowName, name, 256, kCFStringEncodingUTF8);
+  } else {
+    snprintf(name, 256, "Unknown");
+  }
+
+  // Get the window number
+  CFNumberRef windowNumberRef =
+      (CFNumberRef)CFDictionaryGetValue(windowInfo, kCGWindowNumber);
+  if (windowNumberRef) {
+    if (!CFNumberGetValue(windowNumberRef, kCFNumberIntType, windowNumber)) {
+      return 3; // Failed to get window number
+    }
+  }
+
+  // Get the window layer
+  CFNumberRef windowLayerRef =
+      (CFNumberRef)CFDictionaryGetValue(windowInfo, kCGWindowLayer);
+  if (windowLayerRef) {
+    if (!CFNumberGetValue(windowLayerRef, kCFNumberIntType, windowLayer)) {
+      return 4; // Failed to get window layer
+    }
+  }
+
+  // Get the window bounds (CGRect)
+  CFDictionaryRef windowBoundsRef =
+      (CFDictionaryRef)CFDictionaryGetValue(windowInfo, kCGWindowBounds);
+  if (windowBoundsRef) {
+    CFNumberRef windowBoundsXRef =
+        (CFNumberRef)CFDictionaryGetValue(windowBoundsRef, CFSTR("X"));
+    CFNumberRef windowBoundsYRef =
+        (CFNumberRef)CFDictionaryGetValue(windowBoundsRef, CFSTR("Y"));
+    CFNumberRef windowBoundsWidthRef =
+        (CFNumberRef)CFDictionaryGetValue(windowBoundsRef, CFSTR("Width"));
+    CFNumberRef windowBoundsHeightRef =
+        (CFNumberRef)CFDictionaryGetValue(windowBoundsRef, CFSTR("Height"));
+
+    if (windowBoundsXRef && windowBoundsYRef && windowBoundsWidthRef &&
+        windowBoundsHeightRef) {
+      float x, y, width, height;
+      if (CFNumberGetValue(windowBoundsXRef, kCFNumberFloat32Type, &x) &&
+          CFNumberGetValue(windowBoundsYRef, kCFNumberFloat32Type, &y) &&
+          CFNumberGetValue(windowBoundsWidthRef, kCFNumberFloat32Type,
+                           &width) &&
+          CFNumberGetValue(windowBoundsHeightRef, kCFNumberFloat32Type,
+                           &height)) {
+
+        *windowBounds = CGRectMake(x, y, width, height);
+      } else {
+        return 5; // Failed to extract window bounds
+      }
+    }
+  }
+
+  // Get the window sharing state
+  CFNumberRef windowSharingStateRef =
+      (CFNumberRef)CFDictionaryGetValue(windowInfo, kCGWindowSharingState);
+  if (windowSharingStateRef) {
+    if (!CFNumberGetValue(windowSharingStateRef, kCFNumberIntType,
+                          windowSharingState)) {
+      return 6; // Failed to get window sharing state
+    }
+  }
+
+  // Get the window alpha value
+  CFNumberRef windowAlphaRef =
+      (CFNumberRef)CFDictionaryGetValue(windowInfo, kCGWindowAlpha);
+  if (windowAlphaRef) {
+    if (!CFNumberGetValue(windowAlphaRef, kCFNumberFloat32Type, windowAlpha)) {
+      return 7; // Failed to get window alpha
+    }
+  }
+
+  return 0; // Success
+}

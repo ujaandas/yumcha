@@ -14,12 +14,14 @@ import (
 )
 
 type Window struct {
-	Rect     foundation.Rect
-	PID      int
-	WindowID uint32
-	Title    string
-	Layer    int
-	Visible  bool
+	Rect         foundation.Rect
+	PID          int
+	WindowID     int
+	Title        string
+	Layer        int
+	Visible      bool
+	SharingState int
+	Alpha        float32
 }
 
 type WindowAPI struct{}
@@ -66,31 +68,42 @@ func (WindowAPI) Windows() ([]Window, error) {
 	result := make([]Window, 0, count)
 
 	for i := 0; i < count; i++ {
-		dictRef := C.CFArrayGetValueAtIndex(windows, C.CFIndex(i))
-		if dictRef == nil {
-			continue
-		}
-		// TODO: Implement smth like these
-		// bounds := foundation.RectFromCFDictionary(dictRef, "Bounds")
-		// pid := foundation.IntFromCFDictionary(dictRef, "OwnerPID")
-		// windowID := foundation.UInt32FromCFDictionary(dictRef, "WindowNumber")
-		// title := foundation.StringFromCFDictionary(dictRef, "Name")
-		// layer := foundation.IntFromCFDictionary(dictRef, "Layer")
-		// alpha := foundation.FloatFromCFDictionary(dictRef, "Alpha")
-		// visible := alpha > 0.0
+		var pid C.int
+		var name [256]C.char
+		var windowNumber C.int
+		var windowLayer C.int
+		var windowBounds C.CGRect
+		var windowSharingState C.int
+		var windowAlpha C.float
 
-		// result = append(result, Window{
-		// 	Rect:     bounds,
-		// 	PID:      pid,
-		// 	WindowID: windowID,
-		// 	Title:    title,
-		// 	Layer:    layer,
-		// 	Visible:  visible,
-		// })
+		rc := C.get_window_dict_vals(&windows, C.int(i), &pid, &name[0], &windowNumber, &windowLayer, &windowBounds, &windowSharingState, &windowAlpha)
+		if rc != 0 {
+			return nil, fmt.Errorf("failed to get window data, rc=%d", int(rc))
+		}
+
+		title := C.GoString(&name[0])
+
+		result = append(result, Window{
+			Rect: foundation.Rect{
+				Origin: foundation.Point{
+					X: float64(windowBounds.origin.x),
+					Y: float64(windowBounds.origin.y)},
+				Size: foundation.Size{
+					Width:  float64(windowBounds.size.width),
+					Height: float64(windowBounds.size.height),
+				}},
+			PID:          int(pid),
+			WindowID:     int(windowNumber),
+			Title:        title,
+			Layer:        int(windowLayer),
+			SharingState: int(windowSharingState),
+			Alpha:        float32(windowAlpha),
+		})
 	}
 
 	return result, nil
 }
+
 func (WindowAPI) VisibleWindows() ([]foundation.Rect, error) { panic("Unimplemented!") }
 
 func (WindowAPI) TransformWindow(foundation.Rect) error { panic("Unimplemented!") }
