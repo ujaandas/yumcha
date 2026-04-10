@@ -3,7 +3,7 @@
 package darwin
 
 // #cgo LDFLAGS: -framework Cocoa -framework ApplicationServices -framework CoreFoundation
-// #include "ax.h"
+// #include "window_api.h"
 import "C"
 
 import (
@@ -45,7 +45,7 @@ func (WindowAPI) FocusedWindow() (foundation.Rect, error) {
 	pid := int(app.ProcessIdentifier())
 
 	var x, y, w, h C.int
-	rc := C.focused_window_rect_for_pid(C.pid_t(pid), &x, &y, &w, &h)
+	rc := C.window_api_focused_window_rect_for_pid(C.pid_t(pid), &x, &y, &w, &h)
 	if rc != 0 {
 		return foundation.Rect{}, fmt.Errorf("accessiblity cooked, rc=%d", int(rc))
 	}
@@ -58,7 +58,7 @@ func (WindowAPI) FocusedWindow() (foundation.Rect, error) {
 func (WindowAPI) Windows() ([]Window, error) {
 	var windows C.CFArrayRef
 	var numWindows C.int
-	rc := C.get_window_list(&windows, &numWindows)
+	rc := C.window_api_get_window_list(&windows, &numWindows)
 	defer C.CFRelease(C.CFTypeRef(windows))
 	if rc != 0 {
 		return []Window{}, fmt.Errorf("could not fetch window list, rc=%d", int(rc))
@@ -76,7 +76,7 @@ func (WindowAPI) Windows() ([]Window, error) {
 		var windowSharingState C.int
 		var windowAlpha C.float
 
-		rc := C.get_window_dict_vals(&windows, C.int(i), &pid, &name[0], &windowNumber, &windowLayer, &windowBounds, &windowSharingState, &windowAlpha)
+		rc := C.window_api_get_window_dict_vals(&windows, C.int(i), &pid, &name[0], &windowNumber, &windowLayer, &windowBounds, &windowSharingState, &windowAlpha)
 		if rc != 0 {
 			return nil, fmt.Errorf("failed to get window data, rc=%d", int(rc))
 		}

@@ -1,6 +1,7 @@
-#include "ax.h"
+#include "window_api.h"
 
-int focused_window_rect_for_pid(pid_t pid, int *x, int *y, int *w, int *h) {
+int window_api_focused_window_rect_for_pid(pid_t pid, int *x, int *y, int *w,
+                                           int *h) {
   AXUIElementRef app = AXUIElementCreateApplication(pid);
   if (!app)
     return 1;
@@ -57,7 +58,7 @@ int focused_window_rect_for_pid(pid_t pid, int *x, int *y, int *w, int *h) {
   return 0;
 }
 
-int get_window_list(CFArrayRef *windows, int *windowLen) {
+int window_api_get_window_list(CFArrayRef *windows, int *windowLen) {
   const CFArrayRef windowList =
       CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID);
 
@@ -73,10 +74,11 @@ int get_window_list(CFArrayRef *windows, int *windowLen) {
   return 0;
 }
 
-int get_window_dict_vals(CFArrayRef *windows, int i, int *pid, char *name,
-                         int *windowNumber, int *windowLayer,
-                         CGRect *windowBounds, int *windowSharingState,
-                         float *windowAlpha) {
+int window_api_get_window_dict_vals(CFArrayRef *windows, int i, int *pid,
+                                    char *name, int *windowNumber,
+                                    int *windowLayer, CGRect *windowBounds,
+                                    int *windowSharingState,
+                                    float *windowAlpha) {
   const CFDictionaryRef windowInfo =
       (CFDictionaryRef)CFArrayGetValueAtIndex(*windows, i);
 
