@@ -10,3 +10,5 @@ int window_info_for_pid(pid_t pid, int *windowID, int *layer,
                         char *name);
 
 int set_window_pid_pos(pid_t pid, int x, int y);
+
+int set_window_pid_size(pid_t pid, int x, int y);

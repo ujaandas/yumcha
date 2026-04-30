@@ -120,3 +120,38 @@ int set_window_pid_pos(pid_t pid, int x, int y) {
   CFRelease(app);
   return 0;
 }
+
+int set_window_pid_size(pid_t pid, int x, int y) {
+  // Get accessibility object
+  AXUIElementRef app = AXUIElementCreateApplication(pid);
+
+  // Get windows
+  CFArrayRef windows;
+  if (AXUIElementCopyAttributeValue(app, kAXWindowsAttribute,
+                                    (CFTypeRef *)&windows) != kAXErrorSuccess) {
+    CFRelease(app);
+    return 1;
+  }
+
+  // Iterate over windows
+  const int numWindows = CFArrayGetCount(windows);
+  for (CFIndex i = 0; i < numWindows; i++) {
+    // Get window object
+    AXUIElementRef window = (AXUIElementRef)CFArrayGetValueAtIndex(windows, i);
+
+    // Set size
+    CGSize size = CGSizeMake(x, y);
+    AXValueRef sizeValue = AXValueCreate(kAXValueTypeCGSize, &size);
+
+    AXError err =
+        AXUIElementSetAttributeValue(window, kAXSizeAttribute, sizeValue);
+    printf("set size err: %d\n", err);
+
+    CFRelease(sizeValue);
+  }
+
+  CFRelease(windows);
+  CFRelease(app);
+
+  return 0;
+}

@@ -47,7 +47,7 @@ func TestFocusedWindow(t *testing.T) {
 
 }
 
-func TestTransformsFocusedWindow(t *testing.T) {
+func TestMovesFocusedWindow(t *testing.T) {
 	p := WindowAPI{}
 
 	window, err := p.FocusedWindow()
@@ -59,11 +59,32 @@ func TestTransformsFocusedWindow(t *testing.T) {
 
 	initialPos := window.Rect.Origin
 
-	if err := p.TransformWindow(window.PID, 50, 50); err != nil {
+	if err := p.MoveWindow(window.PID, 50, 50); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := p.TransformWindow(window.PID, int(initialPos.X), int(initialPos.Y)); err != nil {
+	if err := p.MoveWindow(window.PID, int(initialPos.X), int(initialPos.Y)); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestResizesFocusedWindow(t *testing.T) {
+	p := WindowAPI{}
+
+	window, err := p.FocusedWindow()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	t.Logf("got %s window at: %.0fx%.0f, at pos: %.0fx%.0f", window.Title, window.Rect.Size.Width, window.Rect.Size.Height, window.Rect.Origin.X, window.Rect.Origin.Y)
+
+	initialSize := window.Rect.Size
+
+	if err := p.ResizeWindow(window.PID, 50, 50); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := p.ResizeWindow(window.PID, int(initialSize.Width), int(initialSize.Height)); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

@@ -76,8 +76,17 @@ func (WindowAPI) FocusedWindow() (Window, error) {
 		nil
 }
 
-func (WindowAPI) TransformWindow(pid, x, y int) error {
+func (WindowAPI) MoveWindow(pid, x, y int) error {
 	status := C.set_window_pid_pos(C.int(pid), C.int(x), C.int(y))
+	if status != 0 {
+		return fmt.Errorf("failed to move window, status=%d", int(status))
+	}
+
+	return nil
+}
+
+func (WindowAPI) ResizeWindow(pid, x, y int) error {
+	status := C.set_window_pid_size(C.int(pid), C.int(x), C.int(y))
 	if status != 0 {
 		return fmt.Errorf("failed to move window, status=%d", int(status))
 	}
