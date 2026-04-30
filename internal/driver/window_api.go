@@ -3,7 +3,7 @@
 package driver
 
 // #cgo LDFLAGS: -framework Cocoa -framework ApplicationServices -framework CoreFoundation
-// #include "ax.h"
+// #include "window_driver.h"
 import "C"
 
 import (
