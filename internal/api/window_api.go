@@ -38,35 +38,30 @@ func (WindowAPI) Screens() ([]appkit.Screen, error) {
 }
 
 func windowFromPid(pid int) (Window, error) {
-	var name [256]C.char
-	var id C.int
-	var layer C.int
-	var bounds C.CGRect
-	var sharingState C.int
-	var alpha C.float
+	var window C.Window
 
-	status := C.window_info_for_pid(C.pid_t(pid), &id, &layer, &bounds, &sharingState, &alpha, &name[0])
+	status := C.window_info_for_pid(C.pid_t(pid), &window)
 	if status != 0 {
 		return Window{}, fmt.Errorf("accessiblity cooked, status=%d", int(status))
 	}
 
-	title := C.GoString(&name[0])
+	title := C.GoString(window.title)
 	return Window{
-			PID:      int(pid),
-			WindowID: int(id),
-			Title:    string(title),
-			Layer:    int(layer),
+			PID:      pid,
+			WindowID: int(window.id),
+			Title:    title,
+			Layer:    int(window.layer),
 			Rect: foundation.Rect{
 				Origin: foundation.Point{
-					X: float64(bounds.origin.x),
-					Y: float64(bounds.origin.y)},
+					X: float64(window.rect.origin.x),
+					Y: float64(window.rect.origin.y)},
 				Size: foundation.Size{
-					Width:  float64(bounds.size.width),
-					Height: float64(bounds.size.height),
+					Width:  float64(window.rect.size.width),
+					Height: float64(window.rect.size.height),
 				}},
 			Visible:      true,
-			SharingState: int(sharingState),
-			Alpha:        float32(alpha)},
+			SharingState: int(window.sharingState),
+			Alpha:        float32(window.alpha)},
 		nil
 }
 
@@ -82,6 +77,9 @@ func (WindowAPI) FocusedWindow() (Window, error) {
 	}
 	return windowFromApp(app)
 }
+
+// func (WindowAPI) AllWindows() ([]Window, error) {
+// }
 
 func (WindowAPI) MoveWindow(pid, x, y int) error {
 	status := C.set_window_pid_pos(C.int(pid), C.int(x), C.int(y))

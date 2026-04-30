@@ -30,6 +30,13 @@ func TestScreens(t *testing.T) {
 	}
 }
 
+func TestWindowFromPid(t *testing.T) {
+	_, err := windowFromPid(0)
+	if err == nil {
+		t.Errorf("expected error for invalid window pid")
+	}
+}
+
 func TestFocusedWindow(t *testing.T) {
 	p := WindowAPI{}
 
@@ -47,7 +54,6 @@ func TestFocusedWindow(t *testing.T) {
 	if window.Rect.Origin.X < 0 || window.Rect.Origin.Y < 0 {
 		t.Errorf("window position broken: %.0fx%.0f", window.Rect.Origin.X, window.Rect.Origin.Y)
 	}
-
 }
 
 func TestMovesFocusedWindow(t *testing.T) {

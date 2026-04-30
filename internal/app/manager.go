@@ -19,7 +19,6 @@ func (m *Manager) Init() error {
 	if err != nil {
 		return fmt.Errorf("failed to fetch focused window")
 	}
-
 	m.focusedWindow = focusedWindow
 
 	return nil
