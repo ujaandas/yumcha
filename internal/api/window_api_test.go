@@ -1,7 +1,7 @@
 //go:build darwin
 // +build darwin
 
-package driver
+package api
 
 import (
 	"testing"

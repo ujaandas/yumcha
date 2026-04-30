@@ -1,6 +1,6 @@
 //go:build darwin
 
-package driver
+package api
 
 // #cgo LDFLAGS: -framework Cocoa -framework ApplicationServices -framework CoreFoundation
 // #include "window_driver.h"
