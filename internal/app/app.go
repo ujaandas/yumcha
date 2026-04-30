@@ -5,9 +5,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
-
-	"github.com/ujaandas/yumcha/internal/api"
 )
 
 type Config struct {
@@ -20,12 +17,8 @@ func Run(ctx context.Context, cfg Config) error {
 		return fmt.Errorf("target pid is required")
 	}
 
-	api := api.WindowAPI{}
-	v, err := api.FocusedWindow()
-	if err != nil {
-		log.Fatalf("error fetching focused window: %v", err)
-	}
-	log.Println(v)
+	manager := Manager{}
+	manager.Init()
 
 	return nil
 }
