@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ujaandas/yumcha/internal/darwin"
+	"github.com/ujaandas/yumcha/internal/driver"
 )
 
 type Config struct {
@@ -20,7 +20,7 @@ func Run(ctx context.Context, cfg Config) error {
 		return fmt.Errorf("target pid is required")
 	}
 
-	api := darwin.WindowAPI{}
+	api := driver.WindowAPI{}
 	v, err := api.FocusedWindow()
 	if err != nil {
 		log.Fatalf("error fetching focused window: %v", err)

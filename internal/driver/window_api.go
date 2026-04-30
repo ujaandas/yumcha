@@ -1,6 +1,6 @@
 //go:build darwin
 
-package darwin
+package driver
 
 // #cgo LDFLAGS: -framework Cocoa -framework ApplicationServices -framework CoreFoundation
 // #include "ax.h"
