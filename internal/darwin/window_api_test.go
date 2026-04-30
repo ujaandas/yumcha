@@ -35,14 +35,14 @@ func TestDarwinFocusedWindow(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	t.Logf("got window at: %.0fx%.0f, at pos: %.0fx%.0f", window.Size.Width, window.Size.Height, window.Origin.X, window.Origin.Y)
+	t.Logf("got %s window at: %.0fx%.0f, at pos: %.0fx%.0f", window.Title, window.Rect.Size.Width, window.Rect.Size.Height, window.Rect.Origin.X, window.Rect.Origin.Y)
 
-	if window.Size.Width <= 0 || window.Size.Height <= 0 {
-		t.Errorf("window dimensions broken: %.0fx%.0f", window.Size.Width, window.Size.Height)
+	if window.Rect.Size.Width <= 0 || window.Rect.Size.Height <= 0 {
+		t.Errorf("window dimensions broken: %.0fx%.0f", window.Rect.Size.Width, window.Rect.Size.Height)
 	}
 
-	if window.Origin.X < 0 || window.Origin.Y < 0 {
-		t.Errorf("window position broken: %.0fx%.0f", window.Origin.X, window.Origin.Y)
+	if window.Rect.Origin.X < 0 || window.Rect.Origin.Y < 0 {
+		t.Errorf("window position broken: %.0fx%.0f", window.Rect.Origin.X, window.Rect.Origin.Y)
 	}
 
 }

@@ -21,7 +21,7 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 
 	api := darwin.WindowAPI{}
-	v, err := api.Windows()
+	v, err := api.FocusedWindow()
 	if err != nil {
 		log.Fatalf("error fetching focused window: %v", err)
 	}
