@@ -9,6 +9,7 @@ import "C"
 import (
 	"fmt"
 
+	"github.com/progrium/darwinkit/kernel"
 	"github.com/progrium/darwinkit/macos/appkit"
 	"github.com/progrium/darwinkit/macos/foundation"
 )
@@ -92,4 +93,32 @@ func (WindowAPI) ResizeWindow(pid, x, y int) error {
 	}
 
 	return nil
+}
+
+func isAppRunning(pid int) (appkit.RunningApplication, bool) {
+	app := appkit.RunningApplication_RunningApplicationWithProcessIdentifier(kernel.Pid(pid))
+	if app.Ptr() == nil {
+		return app, false
+	}
+	return app, true
+}
+
+func (WindowAPI) Hide(pid int) error {
+	if app, ok := isAppRunning(pid); ok {
+		if ok2 := app.Hide(); !ok2 {
+			return nil
+		}
+		return fmt.Errorf("hide op failed")
+	}
+	return fmt.Errorf("app is not running")
+}
+
+func (WindowAPI) Unhide(pid int) error {
+	if app, ok := isAppRunning(pid); ok {
+		if ok2 := app.Unhide(); !ok2 {
+			return nil
+		}
+		return fmt.Errorf("unhide op failed")
+	}
+	return fmt.Errorf("app is not running")
 }
