@@ -89,3 +89,34 @@ int window_info_for_pid(pid_t pid, int *id, int *layer, CGRect *windowBounds,
   CFRelease(windowList);
   return 2;
 }
+
+int set_window_pid_pos(pid_t pid, int x, int y) {
+  // Get accessibility object
+  AXUIElementRef app = AXUIElementCreateApplication(pid);
+
+  // Get windows
+  CFArrayRef windows;
+  if (AXUIElementCopyAttributeValue(app, kAXWindowsAttribute,
+                                    (CFTypeRef *)&windows) != kAXErrorSuccess) {
+    CFRelease(app);
+    return 1;
+  }
+
+  // Iterate over windows
+  const int numWindows = CFArrayGetCount(windows);
+  for (CFIndex i = 0; i < numWindows; i++) {
+    // Get window object
+    AXUIElementRef window = (AXUIElementRef)CFArrayGetValueAtIndex(windows, i);
+
+    // Set position
+    const CGPoint pos = CGPointMake(x, y);
+    AXValueRef posValue = AXValueCreate(kAXValueTypeCGPoint, &pos);
+
+    AXUIElementSetAttributeValue(window, kAXPositionAttribute, posValue);
+    CFRelease(posValue);
+  }
+
+  CFRelease(windows);
+  CFRelease(app);
+  return 0;
+}

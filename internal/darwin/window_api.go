@@ -75,3 +75,12 @@ func (WindowAPI) FocusedWindow() (Window, error) {
 			Alpha:        float32(alpha)},
 		nil
 }
+
+func (WindowAPI) TransformWindow(pid, x, y int) error {
+	status := C.set_window_pid_pos(C.int(pid), C.int(x), C.int(y))
+	if status != 0 {
+		return fmt.Errorf("failed to move window, status=%d", int(status))
+	}
+
+	return nil
+}

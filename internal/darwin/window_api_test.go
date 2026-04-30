@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestDarwinScreens(t *testing.T) {
+func TestScreens(t *testing.T) {
 	p := WindowAPI{}
 
 	screens, err := p.Screens()
@@ -27,7 +27,7 @@ func TestDarwinScreens(t *testing.T) {
 	}
 }
 
-func TestDarwinFocusedWindow(t *testing.T) {
+func TestFocusedWindow(t *testing.T) {
 	p := WindowAPI{}
 
 	window, err := p.FocusedWindow()
@@ -45,4 +45,25 @@ func TestDarwinFocusedWindow(t *testing.T) {
 		t.Errorf("window position broken: %.0fx%.0f", window.Rect.Origin.X, window.Rect.Origin.Y)
 	}
 
+}
+
+func TestTransformsFocusedWindow(t *testing.T) {
+	p := WindowAPI{}
+
+	window, err := p.FocusedWindow()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	t.Logf("got %s window at: %.0fx%.0f, at pos: %.0fx%.0f", window.Title, window.Rect.Size.Width, window.Rect.Size.Height, window.Rect.Origin.X, window.Rect.Origin.Y)
+
+	initialPos := window.Rect.Origin
+
+	if err := p.TransformWindow(window.PID, 50, 50); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := p.TransformWindow(window.PID, int(initialPos.X), int(initialPos.Y)); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 }

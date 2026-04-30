@@ -8,3 +8,5 @@
 int window_info_for_pid(pid_t pid, int *windowID, int *layer,
                         CGRect *windowBounds, int *sharingState, float *alpha,
                         char *name);
+
+int set_window_pid_pos(pid_t pid, int x, int y);
