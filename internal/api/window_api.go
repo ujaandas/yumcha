@@ -37,14 +37,7 @@ func (WindowAPI) Screens() ([]appkit.Screen, error) {
 	return akScreens, nil
 }
 
-func (WindowAPI) FocusedWindow() (Window, error) {
-	app := appkit.Workspace_SharedWorkspace().FrontmostApplication()
-	if app.Ptr() == nil {
-		return Window{}, fmt.Errorf("no frontmost application")
-	}
-
-	pid := int(app.ProcessIdentifier())
-
+func (WindowAPI) WindowFromPid(pid int) (Window, error) {
 	var name [256]C.char
 	var id C.int
 	var layer C.int
@@ -75,6 +68,19 @@ func (WindowAPI) FocusedWindow() (Window, error) {
 			SharingState: int(sharingState),
 			Alpha:        float32(alpha)},
 		nil
+}
+
+func (w *WindowAPI) WindowFromApp(app appkit.RunningApplication) (Window, error) {
+	pid := int(app.ProcessIdentifier())
+	return w.WindowFromPid(pid)
+}
+
+func (w *WindowAPI) FocusedWindow() (Window, error) {
+	app := appkit.Workspace_SharedWorkspace().FrontmostApplication()
+	if app.Ptr() == nil {
+		return Window{}, fmt.Errorf("no frontmost application")
+	}
+	return w.WindowFromApp(app)
 }
 
 func (WindowAPI) MoveWindow(pid, x, y int) error {
