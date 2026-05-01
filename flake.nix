@@ -24,6 +24,7 @@
             gopls
             go-tools
             libffi
+            delve
           ];
         };
       }

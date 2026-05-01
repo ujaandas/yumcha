@@ -5,9 +5,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
-
-	"github.com/ujaandas/yumcha/internal/darwin"
 )
 
 type Config struct {
@@ -20,12 +17,16 @@ func Run(ctx context.Context, cfg Config) error {
 		return fmt.Errorf("target pid is required")
 	}
 
-	api := darwin.WindowAPI{}
-	v, err := api.Windows()
-	if err != nil {
-		log.Fatalf("error fetching focused window: %v", err)
+	manager := Manager{}
+	manager.Init()
+
+	window := manager.focusedWindow
+	fmt.Printf("\nfocused window: %v\n", window)
+
+	windows := manager.windows
+	for i, window := range windows {
+		fmt.Printf("\nwindow %d: %v\n", i, window)
 	}
-	log.Println(v)
 
 	return nil
 }
