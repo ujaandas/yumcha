@@ -8,15 +8,17 @@ import "C"
 
 import (
 	"fmt"
+	"unsafe"
 
 	"github.com/progrium/darwinkit/kernel"
 	"github.com/progrium/darwinkit/macos/appkit"
 	"github.com/progrium/darwinkit/macos/foundation"
 )
 
+// Should we just use the C struct directly? DRY or WET?
 type Window struct {
 	Rect         foundation.Rect
-	PID          int
+	PID          kernel.Pid
 	WindowID     int
 	Title        string
 	Layer        int
@@ -37,6 +39,25 @@ func (WindowAPI) Screens() ([]appkit.Screen, error) {
 	return akScreens, nil
 }
 
+func cWindowToWindow(cWindow C.Window) Window {
+	return Window{
+		PID:      kernel.Pid(cWindow.pid),
+		WindowID: int(cWindow.id),
+		Title:    C.GoString(&cWindow.title[0]),
+		Layer:    int(cWindow.layer),
+		Rect: foundation.Rect{
+			Origin: foundation.Point{
+				X: float64(cWindow.rect.origin.x),
+				Y: float64(cWindow.rect.origin.y)},
+			Size: foundation.Size{
+				Width:  float64(cWindow.rect.size.width),
+				Height: float64(cWindow.rect.size.height),
+			}},
+		Visible:      true,
+		SharingState: int(cWindow.sharingState),
+		Alpha:        float32(cWindow.alpha)}
+}
+
 func windowFromPid(pid int) (Window, error) {
 	var window C.Window
 
@@ -45,24 +66,7 @@ func windowFromPid(pid int) (Window, error) {
 		return Window{}, fmt.Errorf("accessiblity cooked, status=%d", int(status))
 	}
 
-	title := C.GoString(window.title)
-	return Window{
-			PID:      pid,
-			WindowID: int(window.id),
-			Title:    title,
-			Layer:    int(window.layer),
-			Rect: foundation.Rect{
-				Origin: foundation.Point{
-					X: float64(window.rect.origin.x),
-					Y: float64(window.rect.origin.y)},
-				Size: foundation.Size{
-					Width:  float64(window.rect.size.width),
-					Height: float64(window.rect.size.height),
-				}},
-			Visible:      true,
-			SharingState: int(window.sharingState),
-			Alpha:        float32(window.alpha)},
-		nil
+	return cWindowToWindow(window), nil
 }
 
 func windowFromApp(app appkit.RunningApplication) (Window, error) {
@@ -78,11 +82,32 @@ func (WindowAPI) FocusedWindow() (Window, error) {
 	return windowFromApp(app)
 }
 
-// func (WindowAPI) AllWindows() ([]Window, error) {
-// }
+func (WindowAPI) AllWindows() ([]Window, error) {
+	cWindows := make([]C.Window, 1024)
+	var count C.size_t
 
-func (WindowAPI) MoveWindow(pid, x, y int) error {
-	status := C.set_window_pid_pos(C.int(pid), C.int(x), C.int(y))
+	status := C.all_visible_windows(
+		(*C.Window)(unsafe.Pointer(&cWindows[0])),
+		C.size_t(len(cWindows)),
+		&count,
+	)
+
+	if status != 0 {
+		return nil, fmt.Errorf("failed to get all windows")
+	}
+
+	cWindows = cWindows[:count]
+	windows := make([]Window, count)
+
+	for i, cWindow := range cWindows {
+		windows[i] = cWindowToWindow(cWindow)
+	}
+
+	return windows, nil
+}
+
+func (WindowAPI) MoveWindow(pid kernel.Pid, x, y int) error {
+	status := C.set_window_pid_pos(C.pid_t(pid), C.int(x), C.int(y))
 	if status != 0 {
 		return fmt.Errorf("failed to move window, status=%d", int(status))
 	}
@@ -90,8 +115,8 @@ func (WindowAPI) MoveWindow(pid, x, y int) error {
 	return nil
 }
 
-func (WindowAPI) ResizeWindow(pid, x, y int) error {
-	status := C.set_window_pid_size(C.int(pid), C.int(x), C.int(y))
+func (WindowAPI) ResizeWindow(pid kernel.Pid, x, y int) error {
+	status := C.set_window_pid_size(C.pid_t(pid), C.int(x), C.int(y))
 	if status != 0 {
 		return fmt.Errorf("failed to move window, status=%d", int(status))
 	}
@@ -99,7 +124,7 @@ func (WindowAPI) ResizeWindow(pid, x, y int) error {
 	return nil
 }
 
-func isAppRunning(pid int) (appkit.RunningApplication, bool) {
+func isAppRunning(pid kernel.Pid) (appkit.RunningApplication, bool) {
 	app := appkit.RunningApplication_RunningApplicationWithProcessIdentifier(kernel.Pid(pid))
 	if app.Ptr() == nil {
 		return app, false
@@ -107,7 +132,7 @@ func isAppRunning(pid int) (appkit.RunningApplication, bool) {
 	return app, true
 }
 
-func (WindowAPI) Hide(pid int) error {
+func (WindowAPI) Hide(pid kernel.Pid) error {
 	if app, ok := isAppRunning(pid); ok {
 		if ok2 := app.Hide(); !ok2 {
 			return nil
@@ -117,7 +142,7 @@ func (WindowAPI) Hide(pid int) error {
 	return fmt.Errorf("app is not running")
 }
 
-func (WindowAPI) Unhide(pid int) error {
+func (WindowAPI) Unhide(pid kernel.Pid) error {
 	if app, ok := isAppRunning(pid); ok {
 		if ok2 := app.Unhide(); !ok2 {
 			return nil

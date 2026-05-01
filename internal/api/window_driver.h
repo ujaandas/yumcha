@@ -6,14 +6,17 @@
 #include <unistd.h>
 
 typedef struct {
+  pid_t pid;
+  size_t id;
   CGRect rect;
-  pid_t id;
   int layer;
   bool visible;
   int sharingState;
   float alpha;
-  char *title;
+  char title[256];
 } Window;
+
+int all_visible_windows(Window *windows, size_t capacity, size_t *count);
 
 int window_info_for_pid(pid_t pid, Window *window);
 

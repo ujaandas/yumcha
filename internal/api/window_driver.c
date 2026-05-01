@@ -3,88 +3,102 @@
 #include <string.h>
 
 // TODO: add better error handling?
-// int visible_window_list() {
-//   const CFArrayRef windowList = CGWindowListCopyWindowInfo(
-//       kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
 
-//   if (!windowList)
-//     return 1;
+int build_window_struct(CFDictionaryRef dict, Window *out) {
+  if (!dict || !out)
+    return 1;
 
-//   int count = CFArrayGetCount(windowList);
-// }
+  Window window = {0};
 
-Window build_window_struct(CFDictionaryRef dict) {
-  // PID
-  int winPID = 0;
   CFNumberRef pidNum =
       (CFNumberRef)CFDictionaryGetValue(dict, kCGWindowOwnerPID);
-  CFNumberGetValue(pidNum, kCFNumberIntType, &winPID);
+  if (!pidNum)
+    return 2;
+  CFNumberGetValue(pidNum, kCFNumberIntType, &window.pid);
 
-  // Window ID
-  pid_t id = 0;
   CFNumberRef winNum = (CFNumberRef)CFDictionaryGetValue(dict, kCGWindowNumber);
-  CFNumberGetValue(winNum, kCFNumberIntType, &id);
+  if (!winNum)
+    return 3;
+  CFNumberGetValue(winNum, kCFNumberIntType, &window.id);
 
-  // Layer
-  int layer = 0;
   CFNumberRef layerNum =
       (CFNumberRef)CFDictionaryGetValue(dict, kCGWindowLayer);
-  CFNumberGetValue(layerNum, kCFNumberIntType, &layer);
+  if (!layerNum)
+    return 4;
+  CFNumberGetValue(layerNum, kCFNumberIntType, &window.layer);
 
-  // Get the window bounds (CGRect)
-  CGRect rect;
-  CFDictionaryRef windowBoundsRef =
+  CFDictionaryRef bounds =
       (CFDictionaryRef)CFDictionaryGetValue(dict, kCGWindowBounds);
-  if (windowBoundsRef) {
-    CFNumberRef windowBoundsXRef =
-        (CFNumberRef)CFDictionaryGetValue(windowBoundsRef, CFSTR("X"));
-    CFNumberRef windowBoundsYRef =
-        (CFNumberRef)CFDictionaryGetValue(windowBoundsRef, CFSTR("Y"));
-    CFNumberRef windowBoundsWidthRef =
-        (CFNumberRef)CFDictionaryGetValue(windowBoundsRef, CFSTR("Width"));
-    CFNumberRef windowBoundsHeightRef =
-        (CFNumberRef)CFDictionaryGetValue(windowBoundsRef, CFSTR("Height"));
+  if (!bounds)
+    return 5;
 
-    if (windowBoundsXRef && windowBoundsYRef && windowBoundsWidthRef &&
-        windowBoundsHeightRef) {
-      float x, y, width, height;
-      if (CFNumberGetValue(windowBoundsXRef, kCFNumberFloat32Type, &x) &&
-          CFNumberGetValue(windowBoundsYRef, kCFNumberFloat32Type, &y) &&
-          CFNumberGetValue(windowBoundsWidthRef, kCFNumberFloat32Type,
-                           &width) &&
-          CFNumberGetValue(windowBoundsHeightRef, kCFNumberFloat32Type,
-                           &height)) {
+  CFNumberRef xRef = CFDictionaryGetValue(bounds, CFSTR("X"));
+  CFNumberRef yRef = CFDictionaryGetValue(bounds, CFSTR("Y"));
+  CFNumberRef wRef = CFDictionaryGetValue(bounds, CFSTR("Width"));
+  CFNumberRef hRef = CFDictionaryGetValue(bounds, CFSTR("Height"));
 
-        rect = CGRectMake(x, y, width, height);
-      }
-    }
-  }
+  if (!xRef || !yRef || !wRef || !hRef)
+    return 6;
 
-  // Sharing state
-  int sharingState = 0;
-  CFNumberRef sharingNum =
+  float x, y, w, h;
+  if (!CFNumberGetValue(xRef, kCFNumberFloat32Type, &x) ||
+      !CFNumberGetValue(yRef, kCFNumberFloat32Type, &y) ||
+      !CFNumberGetValue(wRef, kCFNumberFloat32Type, &w) ||
+      !CFNumberGetValue(hRef, kCFNumberFloat32Type, &h))
+    return 7;
+
+  window.rect = CGRectMake(x, y, w, h);
+
+  CFNumberRef share =
       (CFNumberRef)CFDictionaryGetValue(dict, kCGWindowSharingState);
-  CFNumberGetValue(sharingNum, kCFNumberIntType, &sharingState);
+  if (share)
+    CFNumberGetValue(share, kCFNumberIntType, &window.sharingState);
 
-  // Alpha
-  float alpha = 0.0;
-  CFNumberRef alphaNum =
-      (CFNumberRef)CFDictionaryGetValue(dict, kCGWindowAlpha);
-  CFNumberGetValue(alphaNum, kCFNumberFloatType, &alpha);
+  CFNumberRef alpha = (CFNumberRef)CFDictionaryGetValue(dict, kCGWindowAlpha);
+  if (alpha)
+    CFNumberGetValue(alpha, kCFNumberFloatType, &window.alpha);
 
-  // Title
-  char name[256];
   CFStringRef title =
       (CFStringRef)CFDictionaryGetValue(dict, kCGWindowOwnerName);
+
   if (title) {
-    CFStringGetCString(title, name, 256, kCFStringEncodingUTF8);
+    CFStringGetCString(title, window.title, sizeof(window.title),
+                       kCFStringEncodingUTF8);
+  } else {
+    window.title[0] = '\0';
   }
 
-  Window window = {rect, id, layer, true, sharingState, alpha};
-  char *result = (char *)malloc(strlen(name) + 1);
-  strcpy(result, name);
-  window.title = result;
-  return window;
+  window.visible = true;
+
+  *out = window;
+  return 0;
+}
+
+int all_visible_windows(Window *windows, size_t capacity, size_t *count) {
+  CFArrayRef windowList = CGWindowListCopyWindowInfo(
+      kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+
+  if (!windowList)
+    return 1;
+
+  CFIndex n = CFArrayGetCount(windowList);
+
+  size_t outIndex = 0;
+
+  for (CFIndex i = 0; i < n && outIndex < capacity; i++) {
+    CFDictionaryRef dict =
+        (CFDictionaryRef)CFArrayGetValueAtIndex(windowList, i);
+    Window w;
+    if (build_window_struct(dict, &w) != 0) {
+      continue; // skip invalid window
+    }
+    windows[outIndex++] = w;
+  }
+
+  CFRelease(windowList);
+
+  *count = outIndex;
+  return 0;
 }
 
 int window_info_for_pid(pid_t pid, Window *window) {
@@ -109,14 +123,18 @@ int window_info_for_pid(pid_t pid, Window *window) {
     if (winPID != pid)
       continue;
 
-    *window = build_window_struct(dict);
+    Window w;
+    if (build_window_struct(dict, &w) != 0) {
+      return 2; // skip invalid window
+    }
+    *window = w;
 
     CFRelease(windowList);
     return 0;
   }
 
   CFRelease(windowList);
-  return 2;
+  return 3;
 }
 
 int set_window_pid_pos(pid_t pid, int x, int y) {
