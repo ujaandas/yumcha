@@ -21,5 +21,11 @@ func (m *Manager) Init() error {
 	}
 	m.focusedWindow = focusedWindow
 
+	allWindows, err := m.api.AllWindows()
+	if err != nil {
+		return fmt.Errorf("failed to fetch focused window")
+	}
+	m.windows = allWindows
+
 	return nil
 }

@@ -20,10 +20,10 @@ func Run(ctx context.Context, cfg Config) error {
 	manager := Manager{}
 	manager.Init()
 
-	window, _ := manager.api.FocusedWindow()
+	window := manager.focusedWindow
 	fmt.Printf("\nfocused window: %v\n", window)
 
-	windows, _ := manager.api.AllWindows()
+	windows := manager.windows
 	for i, window := range windows {
 		fmt.Printf("\nwindow %d: %v\n", i, window)
 	}
